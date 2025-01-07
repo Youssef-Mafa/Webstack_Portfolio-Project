@@ -1,4 +1,5 @@
 # Webstack - Portfolio Project
+![download](https://github.com/user-attachments/assets/64d6a826-03ef-4b53-ba24-b8c0a0af765a)
 
 A full-stack e-commerce application built with the MERN stack (MongoDB, Express.js, React, Node.js), featuring a modern UI with Tailwind CSS and comprehensive e-commerce functionality.
 
