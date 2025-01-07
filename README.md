@@ -90,7 +90,7 @@ npm install
 4. Create a .env file in the server directory with the following variables
 ```env
 PORT=4000
-MONGODB_URI=your_mongodb_connection_string
+MONGODB_URI=mongodb://localhost:27017/webstack_ecommerce
 JWT_SECRET=your_jwt_secret
 ```
 
