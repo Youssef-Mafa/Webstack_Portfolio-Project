@@ -3,6 +3,7 @@ import Home from "./pages/Home";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ProductList from "./pages/products/ProductList";
+import ProductDetail from './pages/products/ProductDetail'
 import Cart from "./pages/cart/Cart";
 import Layout from "./components/layout/Layout";
 import PrivateRoute from "./components/layout/PrivateRoute";
@@ -16,7 +17,6 @@ import Dashboard from './components/admin/Dashboard';
 import ProductManagement from './components/admin/products/ProductManagement';
 import CategoryManagement from './components/admin/categories/CategoryManagement';
 import OrderManagement from './components/admin/orders/OrderManagement';
-import OrderDetails from './components/admin/orders/OrderDetails';
 
 
 function App() {
@@ -29,6 +29,7 @@ function App() {
           <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />
           <Route path="products" element={<ProductList />} />
+          <Route path="/products/:id" element={<ProductDetail />} />
           
           {/* Protected Customer Routes */}
           <Route element={<PrivateRoute />}>
@@ -45,7 +46,6 @@ function App() {
               <Route path="/admin/products" element={<ProductManagement />} />
               <Route path="/admin/categories" element={<CategoryManagement />} />
               <Route path="/admin/orders" element={<OrderManagement />} />
-              <Route path="/admin/OrderDetails" element={<OrderDetails />} />
               
             </Route>
           </Route>

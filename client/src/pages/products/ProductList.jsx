@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { getProducts, setFilters, resetFilters } from '../../features/products/productSlice';
 import { addToCart } from '../../features/cart/cartSlice';
+import axiosInstance from '../../utils/axios';
 
 const ProductList = () => {
     const navigate = useNavigate();
@@ -12,6 +13,8 @@ const ProductList = () => {
     );
     const { user } = useSelector((state) => state.auth);
     
+    // Add categories state
+    const [categories, setCategories] = useState([]);
     const [localFilters, setLocalFilters] = useState({
         search: '',
         category: '',
@@ -24,8 +27,21 @@ const ProductList = () => {
     const [showVariantModal, setShowVariantModal] = useState(false);
     const [quantity, setQuantity] = useState(1);
 
+    // Fetch products and categories when component mounts
     useEffect(() => {
         dispatch(getProducts({ page: currentPage, ...filters }));
+
+        // Fetch categories
+        const fetchCategories = async () => {
+            try {
+                const response = await axiosInstance.get('/categories');
+                setCategories(response.data);
+            } catch (error) {
+                console.error('Error fetching categories:', error);
+            }
+        };
+
+        fetchCategories();
     }, [dispatch, currentPage, filters]);
 
     const handleInputChange = (e) => {
@@ -140,7 +156,11 @@ const ProductList = () => {
                                 className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             >
                                 <option value="">All Categories</option>
-                                {/* Add your categories here */}
+                                {categories.map((category) => (
+                                    <option key={category._id} value={category._id}>
+                                        {category.name}
+                                    </option>
+                                ))}
                             </select>
                         </div>
 
@@ -149,22 +169,24 @@ const ProductList = () => {
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Price Range
                             </label>
-                            <input
-                                type="number"
-                                name="minPrice"
-                                value={localFilters.minPrice}
-                                onChange={handleInputChange}
-                                className="w-full mb-2 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                placeholder="Min Price"
-                            />
-                            <input
-                                type="number"
-                                name="maxPrice"
-                                value={localFilters.maxPrice}
-                                onChange={handleInputChange}
-                                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                placeholder="Max Price"
-                            />
+                            <div className="grid grid-cols-2 gap-2">
+                                <input
+                                    type="number"
+                                    name="minPrice"
+                                    value={localFilters.minPrice}
+                                    onChange={handleInputChange}
+                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    placeholder="Min Price"
+                                />
+                                <input
+                                    type="number"
+                                    name="maxPrice"
+                                    value={localFilters.maxPrice}
+                                    onChange={handleInputChange}
+                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    placeholder="Max Price"
+                                />
+                            </div>
                         </div>
 
                         {/* Filter Buttons */}
@@ -209,6 +231,19 @@ const ProductList = () => {
                                         <p className="text-gray-600 mb-2 line-clamp-2">
                                             {product.description}
                                         </p>
+                                        <div className="flex flex-wrap gap-2 mb-2">
+                                            {product.categories.map((categoryId) => {
+                                                const category = categories.find(c => c._id === categoryId);
+                                                return category ? (
+                                                    <span
+                                                        key={categoryId}
+                                                        className="inline-block bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded"
+                                                    >
+                                                        {category.name}
+                                                    </span>
+                                                ) : null;
+                                            })}
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="p-4 pt-0">

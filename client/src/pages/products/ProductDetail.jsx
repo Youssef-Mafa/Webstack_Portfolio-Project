@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { getProductById } from '../../features/products/productSlice';
 import { addToCart } from '../../features/cart/cartSlice';
+import axiosInstance from '../../utils/axios';
 
 const ProductDetail = () => {
     const { id } = useParams();
@@ -11,14 +12,38 @@ const ProductDetail = () => {
     const { selectedProduct, isLoading } = useSelector((state) => state.products);
     const [selectedVariant, setSelectedVariant] = useState(null);
     const [quantity, setQuantity] = useState(1);
+    const [categoryNames, setCategoryNames] = useState({});
+    const [selectedImage, setSelectedImage] = useState(null);
 
     useEffect(() => {
         dispatch(getProductById(id));
     }, [dispatch, id]);
 
     useEffect(() => {
-        if (selectedProduct && selectedProduct.variants?.length > 0) {
-            setSelectedVariant(selectedProduct.variants[0]);
+        const fetchCategories = async () => {
+            try {
+                const response = await axiosInstance.get('/categories');
+                const categoryMap = response.data.reduce((acc, category) => {
+                    acc[category._id] = category.name;
+                    return acc;
+                }, {});
+                setCategoryNames(categoryMap);
+            } catch (error) {
+                console.error('Error fetching categories:', error);
+            }
+        };
+
+        fetchCategories();
+    }, []);
+
+    useEffect(() => {
+        if (selectedProduct) {
+            if (selectedProduct.variants?.length > 0) {
+                setSelectedVariant(selectedProduct.variants[0]);
+            }
+            if (selectedProduct.images?.length > 0) {
+                setSelectedImage(selectedProduct.images[0].url);
+            }
         }
     }, [selectedProduct]);
 
@@ -34,13 +59,19 @@ const ProductDetail = () => {
         setQuantity(1); // Reset quantity when variant changes
     };
 
-    const handleAddToCart = () => {
-        dispatch(addToCart({
-            product_id: selectedProduct._id,
-            variant_id: selectedVariant.sku,
-            quantity
-        }));
+    const handleAddToCart = async () => {
+        try {
+            await dispatch(addToCart({
+                product_id: selectedProduct._id,
+                variant_id: selectedVariant.sku,
+                quantity
+            })).unwrap();
+            alert('Product added to cart successfully!');
+        } catch (error) {
+            alert(error.message || 'Failed to add product to cart');
+        }
     };
+
     if (isLoading) {
         return (
             <div className="flex justify-center items-center h-64">
@@ -70,18 +101,20 @@ const ProductDetail = () => {
                 <div className="md:w-1/2">
                     <div className="bg-white rounded-lg shadow-lg overflow-hidden">
                         <img
-                            src={selectedProduct.images?.[0]?.url || '/placeholder.jpg'}
+                            src={selectedImage || selectedProduct.images?.[0]?.url || '/placeholder.jpg'}
                             alt={selectedProduct.name}
                             className="w-full h-96 object-cover"
                         />
                         {/* Thumbnail Images */}
-                        <div className="flex gap-2 p-4">
+                        <div className="flex gap-2 p-4 overflow-x-auto">
                             {selectedProduct.images?.map((image, index) => (
                                 <img
                                     key={index}
                                     src={image.url}
                                     alt={`${selectedProduct.name} ${index + 1}`}
-                                    className="w-20 h-20 object-cover rounded cursor-pointer border-2"
+                                    className={`w-20 h-20 object-cover rounded cursor-pointer border-2 
+                                        ${selectedImage === image.url ? 'border-indigo-600' : 'border-transparent'}`}
+                                    onClick={() => setSelectedImage(image.url)}
                                 />
                             ))}
                         </div>
@@ -125,7 +158,7 @@ const ProductDetail = () => {
                                             selectedVariant?.sku === variant.sku
                                                 ? 'bg-indigo-600 text-white'
                                                 : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                                        }`}
+                                        } ${variant.stock === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                                         onClick={() => handleVariantChange(variant)}
                                         disabled={variant.stock === 0}
                                     >
@@ -142,39 +175,56 @@ const ProductDetail = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             Quantity
                         </label>
-                        <input
-                            type="number"
-                            min="1"
-                            max={selectedVariant?.stock || 1}
-                            value={quantity}
-                            onChange={handleQuantityChange}
-                            className="w-20 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        />
-                        <span className="ml-2 text-sm text-gray-500">
-                            {selectedVariant?.stock} available
-                        </span>
+                        <div className="flex items-center space-x-3">
+                            <button
+                                onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
+                                className="px-3 py-1 border rounded-md hover:bg-gray-100"
+                                disabled={quantity <= 1}
+                            >
+                                -
+                            </button>
+                            <input
+                                type="number"
+                                min="1"
+                                max={selectedVariant?.stock || 1}
+                                value={quantity}
+                                onChange={handleQuantityChange}
+                                className="w-20 text-center rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                            <button
+                                onClick={() => setQuantity(prev => Math.min(selectedVariant?.stock || 1, prev + 1))}
+                                className="px-3 py-1 border rounded-md hover:bg-gray-100"
+                                disabled={quantity >= (selectedVariant?.stock || 1)}
+                            >
+                                +
+                            </button>
+                            <span className="text-sm text-gray-500">
+                                {selectedVariant?.stock} available
+                            </span>
+                        </div>
                     </div>
 
                     {/* Add to Cart Button */}
                     <button
                         onClick={handleAddToCart}
                         disabled={!selectedVariant || selectedVariant.stock === 0}
-                        className="w-full bg-indigo-600 text-white px-6 py-3 rounded-md hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        className="w-full bg-indigo-600 text-white px-6 py-3 rounded-md hover:bg-indigo-700 
+                            disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
                     >
                         {selectedVariant?.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
                     </button>
 
-                    {/* Additional Info */}
+                    {/* Categories */}
                     {selectedProduct.categories?.length > 0 && (
                         <div className="mt-6">
                             <h3 className="text-sm font-medium text-gray-900 mb-2">Categories</h3>
                             <div className="flex flex-wrap gap-2">
-                                {selectedProduct.categories.map((category, index) => (
+                                {selectedProduct.categories.map((categoryId, index) => (
                                     <span
                                         key={index}
                                         className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm"
                                     >
-                                        {category}
+                                        {categoryNames[categoryId] || 'Loading...'}
                                     </span>
                                 ))}
                             </div>
