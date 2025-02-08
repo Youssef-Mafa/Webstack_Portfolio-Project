@@ -7,7 +7,6 @@ const AddressSchema = new mongoose.Schema({
 });
 
 const UserSchema = new mongoose.Schema({
-    // Remove unique: true from _id since MongoDB handles this automatically
     _id: { type: String, required: true, trim: true },
     email: { 
         type: String, 
@@ -25,6 +24,10 @@ const UserSchema = new mongoose.Schema({
         default: ['customer'] 
     },
     addresses: [AddressSchema],
+    is_verified: { 
+        type: Boolean, 
+        default: false 
+    }
 }, { 
     timestamps: true 
 });
