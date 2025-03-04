@@ -66,7 +66,7 @@ const ProductDetail = () => {
                 variant_id: selectedVariant.sku,
                 quantity
             })).unwrap();
-            alert('Product added to cart successfully!');
+            
         } catch (error) {
             alert(error.message || 'Failed to add product to cart');
         }

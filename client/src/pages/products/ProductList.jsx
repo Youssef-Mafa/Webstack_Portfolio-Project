@@ -107,7 +107,7 @@ const ProductList = () => {
             setSelectedVariant(null);
             setQuantity(1);
             
-            alert('Product added to cart successfully!');
+            
         } catch (error) {
             alert(error.message || 'Failed to add product to cart');
         }
